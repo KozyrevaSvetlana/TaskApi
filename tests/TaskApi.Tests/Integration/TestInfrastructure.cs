@@ -1,11 +1,11 @@
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using RabbitMQ.Client;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using TaskApi.Contracts;
 using TaskApi.Messaging;
 using Testcontainers.PostgreSql;
@@ -31,6 +31,12 @@ internal static class ApiClientExtensions
     }
 }
 
+internal static class RabbitCredentials
+{
+    public const string UserName = "test";
+    public const string Password = "test";
+}
+
 /// <summary>Real API (in-memory TestServer) wired to real PostgreSQL and RabbitMQ containers.</summary>
 public sealed class ApiFactory(string postgresConnectionString, string rabbitHost, int rabbitPort)
     : WebApplicationFactory<Program>
@@ -43,6 +49,8 @@ public sealed class ApiFactory(string postgresConnectionString, string rabbitHos
             ["ConnectionStrings:Postgres"] = postgresConnectionString,
             ["RabbitMq:Host"] = rabbitHost,
             ["RabbitMq:Port"] = rabbitPort.ToString(),
+            ["RabbitMq:UserName"] = RabbitCredentials.UserName,   // новое
+            ["RabbitMq:Password"] = RabbitCredentials.Password,   // новое
             ["RabbitMq:ConnectTimeout"] = "00:00:02"
         }));
     }
@@ -51,7 +59,11 @@ public sealed class ApiFactory(string postgresConnectionString, string rabbitHos
 public sealed class InfrastructureFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder().WithImage("postgres:17-alpine").Build();
-    private readonly RabbitMqContainer _rabbit = new RabbitMqBuilder().WithImage("rabbitmq:4-alpine").Build();
+    private readonly RabbitMqContainer _rabbit = new RabbitMqBuilder()
+        .WithImage("rabbitmq:4-alpine")
+        .WithUsername(RabbitCredentials.UserName)
+        .WithPassword(RabbitCredentials.Password)
+        .Build();
 
     public ApiFactory Factory { get; private set; } = null!;
 
@@ -101,7 +113,13 @@ public sealed class RabbitTestConsumer : IAsyncDisposable
 
     public static async Task<RabbitTestConsumer> CreateAsync(string host, int port)
     {
-        var factory = new ConnectionFactory { HostName = host, Port = port };
+        var factory = new ConnectionFactory
+        {
+            HostName = host,
+            Port = port,
+            UserName = RabbitCredentials.UserName,
+            Password = RabbitCredentials.Password
+        };
         var connection = await factory.CreateConnectionAsync();
         var channel = await connection.CreateChannelAsync();
 
