@@ -8,7 +8,6 @@
   <ItemGroup>
     <ProjectReference Include="..\TaskApi.Data\TaskApi.Data.csproj" />
     <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.18.0" />
 	<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0" />
 	<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
