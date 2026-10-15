@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0
+WORKDIR /src
+
+# Restore first so the layer is cached until a .csproj changes
+COPY Directory.Build.props TaskApi.sln ./
+COPY src/TaskApi.Data/TaskApi.Data.csproj src/TaskApi.Data/
+COPY src/TaskApi/TaskApi.csproj src/TaskApi/
+COPY tests/TaskApi.Tests/TaskApi.Tests.csproj tests/TaskApi.Tests/
+RUN dotnet restore TaskApi.sln
+
+COPY src/ src/
+COPY tests/ tests/
+
+# Extra arguments from "docker compose run tests <args>" are appended, e.g. --filter "FullyQualifiedName~Unit"
+ENTRYPOINT ["dotnet", "test", "TaskApi.sln", "--no-restore"]

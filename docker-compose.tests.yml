@@ -1,0 +1,19 @@
+# Runs the whole test suite inside a container:
+#   docker compose -f docker-compose.tests.yml run --rm tests
+# Only unit tests (no Docker socket needed):
+#   docker compose -f docker-compose.tests.yml run --rm tests --filter "FullyQualifiedName~TaskApi.Tests.Unit"
+#
+# The integration tests start PostgreSQL and RabbitMQ through Testcontainers, so the container
+# needs access to the host's Docker daemon (the socket mount below).
+services:
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      # Testcontainers publishes ports on the host; reach them from inside this container via the host gateway
+      TESTCONTAINERS_HOST_OVERRIDE: host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

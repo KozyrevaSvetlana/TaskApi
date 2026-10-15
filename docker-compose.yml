@@ -1,0 +1,46 @@
+# Full stack: PostgreSQL + RabbitMQ + API
+#   docker compose up --build
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: taskdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d taskdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # management UI: guest / guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=taskdb;Username=postgres;Password=postgres;Maximum Pool Size=100;Minimum Pool Size=10;Max Auto Prepare=32;Auto Prepare Min Usages=2;No Reset On Close=true"
+      RabbitMq__Host: rabbitmq
+    ports:
+      - "8080:8080"
+    stop_grace_period: 15s   # > ShutdownTimeout (10s), so SIGTERM is not escalated to SIGKILL early
+
+volumes:
+  pgdata:
