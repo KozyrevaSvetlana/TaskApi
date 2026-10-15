@@ -12,8 +12,8 @@ using TaskApi.Data;
 namespace TaskApi.Data.Migrations
 {
     [DbContext(typeof(TaskDbContext))]
-    [Migration("20261015110935_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20261015152506_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

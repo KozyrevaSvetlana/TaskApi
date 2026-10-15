@@ -24,6 +24,7 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options) : DbContext(
 
             // Supports "ORDER BY created_at DESC, id DESC" used by GET /tasks without a sort step.
             entity.HasIndex(x => new { x.CreatedAt, x.Id }).IsDescending(true, true);
+            //entity.HasData(TaskDataSeeder.Generate(101));
         });
     }
 }

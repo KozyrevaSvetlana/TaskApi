@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using TaskApi.Contracts;
 using TaskApi.Data;
 using TaskApi.Endpoints;
+using TaskApi.Filters;
 using TaskApi.Messaging;
 using TaskApi.Middleware;
 using TaskApi.Services;
@@ -46,6 +47,7 @@ builder.Services.AddScoped<TaskService>();
 
 builder.Services.AddHealthChecks();
 
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -60,6 +62,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         options.IncludeXmlComments(xmlPath);
     }
+    options.SchemaFilter<EnumAsStringSchemaFilter>();
 });
 var app = builder.Build();
 
