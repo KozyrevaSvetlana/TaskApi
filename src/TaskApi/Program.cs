@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
 using System.Text.Json.Serialization;
 using TaskApi.Contracts;
 using TaskApi.Data;
@@ -41,6 +43,24 @@ builder.Services.AddHostedService(sp => sp.GetRequiredService<RabbitMqService>()
 
 builder.Services.AddScoped<TaskService>();
 
+
+builder.Services.AddHealthChecks();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "CBR Rates Gateway",
+        Version = "v1",
+        Description = "Шлюз получения курсов валют Банка России",
+    });
+
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+});
 var app = builder.Build();
 
 app.Logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
@@ -57,8 +77,9 @@ await app.InitializeDatabaseAsync();
 app.UseExceptionHandler();
 app.UseMiddleware<TitleValidationMiddleware>();
 
-app.MapGet("/healthz", () => Results.Ok());
+app.MapHealthChecks("/healthz");
 app.MapTaskEndpoints();
+
 
 app.Run();
 
