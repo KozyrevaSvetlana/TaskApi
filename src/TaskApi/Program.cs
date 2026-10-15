@@ -63,6 +63,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 var app = builder.Build();
 
+
 app.Logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
 
 if (string.IsNullOrWhiteSpace(app.Configuration.GetConnectionString("Postgres")))
@@ -80,6 +81,8 @@ app.UseMiddleware<TitleValidationMiddleware>();
 app.MapHealthChecks("/healthz");
 app.MapTaskEndpoints();
 
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.Run();
 
