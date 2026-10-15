@@ -1,5 +1,5 @@
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using TaskApi.Contracts;
 using TaskApi.Data;
 using TaskApi.Endpoints;
@@ -30,7 +30,6 @@ builder.Services.AddDbContextPool<TaskDbContext>((sp, options) =>
 {
     var connectionString = sp.GetRequiredService<IConfiguration>().GetConnectionString("Postgres")
         ?? throw new InvalidOperationException("ConnectionStrings:Postgres is not configured.");
-
     options.UseNpgsql(connectionString);
 }, poolSize: 512);
 
@@ -44,6 +43,15 @@ builder.Services.AddScoped<TaskService>();
 
 var app = builder.Build();
 
+app.Logger.LogInformation("Environment: {Environment}", app.Environment.EnvironmentName);
+
+if (string.IsNullOrWhiteSpace(app.Configuration.GetConnectionString("Postgres")))
+{
+    throw new InvalidOperationException(
+        $"ConnectionStrings:Postgres is not configured for environment '{app.Environment.EnvironmentName}'. " +
+        "Set it in appsettings.{Environment}.json or the ConnectionStrings__Postgres environment variable.");
+}
+
 await app.InitializeDatabaseAsync();
 
 app.UseExceptionHandler();
@@ -53,6 +61,8 @@ app.MapGet("/healthz", () => Results.Ok());
 app.MapTaskEndpoints();
 
 app.Run();
+
+
 
 // Needed by WebApplicationFactory<Program> in the integration tests.
 public partial class Program
