@@ -50,9 +50,9 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "CBR Rates Gateway",
+        Title = "Task API",
         Version = "v1",
-        Description = "Шлюз получения курсов валют Банка России",
+        Description = "Задание от Виноградского В.Е.",
     });
 
     var xmlPath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
