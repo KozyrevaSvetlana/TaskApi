@@ -41,7 +41,7 @@ public class TaskDbContext(DbContextOptions<TaskDbContext> options)
                 .IsDescending(true, true);
 
             // При необходимости можно включить начальное заполнение данных:
-            // entity.HasData(TaskDataSeeder.Generate(101));
+            entity.HasData(TaskDataSeeder.Generate(101));
         });
     }
 }

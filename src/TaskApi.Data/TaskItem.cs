@@ -21,7 +21,7 @@ public class TaskItem
     /// <summary>
     /// Уникальный идентификатор задачи.
     /// </summary>
-    public Guid Id { get; private set; }
+    public Guid Id { get; set; }
 
     /// <summary>
     /// Заголовок задачи.
