@@ -10,14 +10,21 @@ public sealed class RabbitMqOptions
     public string Exchange { get; set; } = "task.events";
     public string RoutingKey { get; set; } = "task.completed";
 
-    /// <summary>Size of the in-memory buffer between HTTP requests and the publisher loop.</summary>
-    public int QueueCapacity { get; set; } = 10_000;
-
+    /// <summary>Размер буфера в оперативной памяти между HTTP-запросами и циклом публикации.</summary>    public int QueueCapacity { get; set; } = 10_000;
     public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(3);
 
-    /// <summary>Pause between reconnect attempts while the broker is down (messages are logged meanwhile).</summary>
-    public TimeSpan ReconnectDelay { get; set; } = TimeSpan.FromSeconds(5);
+    /// <summary>Пауза между попытками повторного подключения, пока брокер недоступен (в это время сообщения записываются в журнал).</summary>    public TimeSpan ReconnectDelay { get; set; } = TimeSpan.FromSeconds(5);
 
-    /// <summary>How long shutdown waits for already queued messages to be sent.</summary>
+    /// <summary>Как долго процесс завершения работы ожидает отправки сообщений, уже поставленных в очередь.</summary>
     public TimeSpan ShutdownDrainTimeout { get; set; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// Максимальное количество сообщений в очереди в памяти.
+    /// </summary>
+    public int QueueCapacity { get; init; } = 1_000;
+
+    /// <summary>
+    /// Задержка перед повторной попыткой подключения к RabbitMQ.
+    /// </summary>
+    public TimeSpan ReconnectDelay { get; init; } = TimeSpan.FromSeconds(5);
 }

@@ -3,7 +3,6 @@ using TaskApi.Messaging;
 
 namespace TaskApi.Contracts;
 
-/// <summary>Source-generated JSON metadata: no reflection and fewer allocations on the hot path.</summary>
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     PropertyNameCaseInsensitive = true,

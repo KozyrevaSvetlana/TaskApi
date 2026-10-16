@@ -2,6 +2,8 @@ namespace TaskApi.Messaging;
 
 public interface IEventPublisher
 {
-    /// <summary>Non-blocking. Returns false if the in-memory buffer is full (the message is logged and dropped).</summary>
+    /// <summary>
+    ///Неблокирующая операция.Возвращает false, если буфер в оперативной памяти заполнен (сообщение фиксируется в логе, но отбрасывается).</summary>
+    ///</summary>
     bool TryPublish(TaskCompletedMessage message);
 }

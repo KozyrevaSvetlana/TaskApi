@@ -2,16 +2,26 @@ using Microsoft.AspNetCore.Http.Features;
 using System.Text.Json;
 using TaskApi.Validation;
 
+
 namespace TaskApi.Middleware;
 
 /// <summary>
-/// Rejects POST /tasks with an invalid Title before routing, model binding and any DB/DI work happen.
-/// The body is buffered (size-capped) and rewound so the endpoint can still bind it.
+/// Проверяет заголовок задачи в запросе <c>POST /tasks</c> до выполнения привязки модели
+/// и обращения к базе данных или зависимостям приложения.
+/// Тело запроса временно буферизуется с ограничением размера, а затем перематывается,
+/// чтобы endpoint мог прочитать его повторно.
 /// </summary>
+/// <param name="next">Следующий компонент конвейера обработки запросов.</param>
 public sealed class TitleValidationMiddleware(RequestDelegate next)
 {
     private const int MaxBodySize = 16 * 1024;
 
+    /// <summary>
+    /// Проверяет тело запроса на создание задачи и передаёт запрос следующему компоненту,
+    /// если проверка пройдена.
+    /// </summary>
+    /// <param name="context">Контекст текущего HTTP-запроса.</param>
+    /// <returns>Асинхронная задача обработки запроса.</returns>
     public async Task InvokeAsync(HttpContext context)
     {
         if (!IsCreateTaskRequest(context.Request))
@@ -33,7 +43,7 @@ public sealed class TitleValidationMiddleware(RequestDelegate next)
         }
         catch (BadHttpRequestException ex)
         {
-            context.Response.StatusCode = ex.StatusCode; // e.g. 413 for an oversized body
+            context.Response.StatusCode = ex.StatusCode; // Например, 413 — тело запроса слишком велико.
             return;
         }
 
@@ -44,24 +54,49 @@ public sealed class TitleValidationMiddleware(RequestDelegate next)
             var problem = new HttpValidationProblemDetails(errors)
             {
                 Status = StatusCodes.Status400BadRequest,
-                Title = "One or more validation errors occurred."
+                Title = "Обнаружена одна или несколько ошибок проверки."
             };
 
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsJsonAsync(
-                problem, (JsonSerializerOptions?)null, "application/problem+json", context.RequestAborted);
+                problem,
+                (JsonSerializerOptions?)null,
+                "application/problem+json",
+                context.RequestAborted);
             return;
         }
 
         await next(context);
     }
 
+    /// <summary>
+    /// Определяет, является ли запрос запросом на создание задачи с JSON-телом.
+    /// Запросы с другим типом содержимого передаются дальше, чтобы endpoint мог вернуть 415.
+    /// </summary>
+    /// <param name="request">HTTP-запрос для проверки.</param>
+    /// <returns>
+    /// <see langword="true"/>, если это запрос <c>POST /tasks</c> с JSON-телом;
+    /// иначе <see langword="false"/>.
+    /// </returns>
     private static bool IsCreateTaskRequest(HttpRequest request) =>
         HttpMethods.IsPost(request.Method)
-        && request.HasJsonContentType() // otherwise let the endpoint answer 415
-        && string.Equals(request.Path.Value?.TrimEnd('/'), "/tasks", StringComparison.OrdinalIgnoreCase);
+        && request.HasJsonContentType()
+        && string.Equals(
+            request.Path.Value?.TrimEnd('/'),
+            "/tasks",
+            StringComparison.OrdinalIgnoreCase);
 
-    private static async Task<Dictionary<string, string[]>?> ValidateBodyAsync(Stream body, CancellationToken ct)
+    /// <summary>
+    /// Читает JSON-тело запроса и проверяет значение свойства <c>title</c>.
+    /// </summary>
+    /// <param name="body">Поток с телом запроса.</param>
+    /// <param name="ct">Токен отмены запроса.</param>
+    /// <returns>
+    /// Словарь ошибок проверки либо <see langword="null"/>, если ошибок нет.
+    /// </returns>
+    private static async Task<Dictionary<string, string[]>?> ValidateBodyAsync(
+        Stream body,
+        CancellationToken ct)
     {
         JsonDocument document;
         try
@@ -70,13 +105,13 @@ public sealed class TitleValidationMiddleware(RequestDelegate next)
         }
         catch (JsonException)
         {
-            return Error("body", "Request body must be valid JSON.");
+            return Error("body", "Тело запроса должно содержать корректный JSON.");
         }
 
         using (document)
         {
             if (document.RootElement.ValueKind != JsonValueKind.Object)
-                return Error("body", "Request body must be a JSON object.");
+                return Error("body", "Тело запроса должно быть JSON-объектом.");
 
             string? title = null;
             foreach (var property in document.RootElement.EnumerateObject())
@@ -89,10 +124,12 @@ public sealed class TitleValidationMiddleware(RequestDelegate next)
                     case JsonValueKind.String:
                         title = property.Value.GetString();
                         break;
+
                     case JsonValueKind.Null:
                         break;
+
                     default:
-                        return Error("title", "Title must be a string.");
+                        return Error("title", "Значение поля Title должно быть строкой.");
                 }
             }
 
@@ -102,6 +139,12 @@ public sealed class TitleValidationMiddleware(RequestDelegate next)
         }
     }
 
+    /// <summary>
+    /// Создаёт словарь с ошибкой проверки для указанного поля.
+    /// </summary>
+    /// <param name="key">Имя поля или части запроса, к которой относится ошибка.</param>
+    /// <param name="message">Описание ошибки.</param>
+    /// <returns>Словарь ошибок в формате, используемом ответом Validation Problem Details.</returns>
     private static Dictionary<string, string[]> Error(string key, string message) =>
         new() { [key] = [message] };
 }

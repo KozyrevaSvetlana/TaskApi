@@ -150,7 +150,7 @@ public sealed partial class RabbitMqService : BackgroundService, IEventPublisher
 
         try
         {
-            await DisposeConnectionAsync(); // drop a stale connection, if any
+            await DisposeConnectionAsync();
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(_options.ConnectTimeout);
@@ -164,7 +164,6 @@ public sealed partial class RabbitMqService : BackgroundService, IEventPublisher
                 VirtualHost = _options.VirtualHost,
                 ClientProvidedName = "task-api-publisher",
                 RequestedConnectionTimeout = _options.ConnectTimeout,
-                // Reconnection is handled here (with a back-off), not by the client library.
                 AutomaticRecoveryEnabled = false,
                 TopologyRecoveryEnabled = false
             };
@@ -221,25 +220,36 @@ public sealed partial class RabbitMqService : BackgroundService, IEventPublisher
             LogCloseFailed("connection", ex.Message);
         }
     }
-
     private static string Serialize(TaskCompletedMessage message) =>
-        JsonSerializer.Serialize(message, AppJsonContext.Default.TaskCompletedMessage);
+    JsonSerializer.Serialize(message, AppJsonContext.Default.TaskCompletedMessage);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "RabbitMQ is unavailable, event dropped: {Payload}")]
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "RabbitMQ недоступен, событие отброшено: {Payload}")]
     private partial void LogDropped(string payload);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to publish event to RabbitMQ, event dropped: {Payload}")]
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Не удалось опубликовать событие в RabbitMQ, событие отброшено: {Payload}")]
     private partial void LogPublishFailed(Exception exception, string payload);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Publish buffer is full, event dropped: {Payload}")]
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Буфер публикации заполнен, событие отброшено: {Payload}")]
     private partial void LogQueueRejected(string payload);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Cannot connect to RabbitMQ at {Host}:{Port}: {Reason}")]
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Не удалось подключиться к RabbitMQ по адресу {Host}:{Port}: {Reason}")]
     private partial void LogConnectFailed(string host, int port, string reason);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Shutdown drain timeout reached, {Remaining} event(s) were not published")]
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Истекло время ожидания обработки очереди; не опубликовано событий: {Remaining}")]
     private partial void LogDrainTimeout(int remaining);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Error while closing RabbitMQ {Resource}: {Reason}")]
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Ошибка при закрытии ресурса RabbitMQ ({Resource}): {Reason}")]
     private partial void LogCloseFailed(string resource, string reason);
 }
