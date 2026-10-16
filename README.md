@@ -56,9 +56,9 @@ docker compose up --build
 
 | Сервис | Адрес |
 |--------|-------|
-| API | http://localhost:8080 |
-| Swagger UI | http://localhost:8080/swagger |
-| Health-check | http://localhost:8080/healthz |
+| API | http://localhost:50564 |
+| Swagger UI | http://localhost:50564/swagger |
+| Health-check | http://localhost:50564/healthz |
 | RabbitMQ UI | http://localhost:15672 (guest / guest) |
 | PostgreSQL | localhost:5432 (БД `taskdb`) |
 
